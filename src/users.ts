@@ -3,7 +3,13 @@ import Wallet from "./models/Wallet";
 
 const getUser = async (id: string): Promise<IUser | null> => {
   try {
-    const user = await User.findById(id).populate("wallet");
+    const user = await User.findById(id).populate({
+      path: "wallet",
+      populate: {
+        path: "transactions",
+        model: "Transaction"
+      }
+    })
     console.log(user);
 
     return user;
@@ -15,7 +21,13 @@ const getUser = async (id: string): Promise<IUser | null> => {
 
 const getUsers = async (): Promise<IUser[]> => {
   try {
-    const users = await User.find().populate("wallet");
+    const users = await User.find().populate({
+      path: "wallet",
+      populate: {
+        path: "transactions",
+        model: "Transaction"
+      }
+    });
     return users;
   } catch (error) {
     console.error("Erro ao buscar usuários:", error);
@@ -32,10 +44,6 @@ const createUser = async (name: string, email: string): Promise<IUser> => {
     // Cria o usuário
     const user = new User({ name, email, wallet: wallet._id });
     await user.save();
-
-    console.log(user);
-    console.log(wallet);
-    console.log('-------------------------------');
 
     return user;
   } catch (error) {
