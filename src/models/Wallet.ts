@@ -1,6 +1,6 @@
 import mongoose, { Document, Schema } from "mongoose";
 
-interface Wallet extends Document {
+interface IWallet extends Document {
   userId: mongoose.Types.ObjectId;
   balance: number;
 }
@@ -10,6 +10,7 @@ const WalletSchema: Schema = new Schema({
   balance: { type: Number, default: 0 },
 });
 
-const Wallet = mongoose.model<Wallet>('Wallet', WalletSchema);
+const Wallet = mongoose.model<IWallet>('Wallet', WalletSchema);
 
-export default Wallet
+export default Wallet;
+export { IWallet };

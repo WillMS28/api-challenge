@@ -1,10 +1,12 @@
-import User from "./models/User";
+import mongoose from "mongoose";
+import User, { IUser } from "./models/User";
+import Wallet from "./models/Wallet";
 
-const getUser = async (id: string): Promise<User | null> => {
+const getUser = async (id: string): Promise<IUser | null> => {
   try {
-    const user = await User.findById(id)
-      .populate("Wallet")
-      .populate("walletId");
+    const user = await User.findById(id).populate("wallet");
+    console.log(user);
+
     return user;
   } catch (error) {
     console.error("Erro ao buscar usuário:", error);
@@ -12,23 +14,36 @@ const getUser = async (id: string): Promise<User | null> => {
   }
 };
 
-const getUsers = async (): Promise<User[]> => {
+const getUsers = async (): Promise<IUser[]> => {
   try {
-    const users = await User.find().populate("walletId"); // Busca todos os usuários e popula a wallet
-    return users; // Retorna a lista de usuários encontrados
+    const users = await User.find().populate("wallet");
+    return users;
   } catch (error) {
     console.error("Erro ao buscar usuários:", error);
     throw new Error("Erro ao buscar usuários");
   }
 };
 
-const createUser = async (name: string, email: string): Promise<User> => {
+const createUser = async (name: string, email: string): Promise<IUser> => {
   try {
-    const user = new User({ name, email });
-    return await user.save(); // Salva o novo usuário no banco de dados
+    // Cria a wallet
+    const wallet = new Wallet({
+      userId: new mongoose.Types.ObjectId(),
+      balance: 0,
+    });
+    await wallet.save();
+    console.log(wallet);
+
+    // Cria o usuário
+    const user = new User({ name, email, wallet: wallet._id });
+    await user.save();
+
+    console.log(user);
+
+    return user;
   } catch (error) {
-    console.error('Erro ao criar usuário:', error);
-    throw new Error('Erro ao criar usuário');
+    console.error("Erro ao criar usuário e wallet:", error);
+    throw new Error("Erro ao criar usuário e wallet");
   }
 };
 

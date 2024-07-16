@@ -1,6 +1,6 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
-interface User extends Document {
+interface IUser extends Document {
   name: string;
   email: string;
   wallet: mongoose.Types.ObjectId; // referência para a wallet
@@ -12,6 +12,7 @@ const UserSchema: Schema = new Schema({
   wallet: { type: mongoose.Types.ObjectId, ref: 'Wallet' }, // referência para a wallet
 });
 
-const User = mongoose.model<User>('User', UserSchema);
+const User = mongoose.model<IUser>('User', UserSchema);
 
 export default User;
+export { IUser };

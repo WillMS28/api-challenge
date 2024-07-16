@@ -1,8 +1,7 @@
-import { buildSchema } from "graphql";
-import User from "./models/User";
-import mongoose from "mongoose";
-import { createUser, getUser, getUsers } from "./users";
-import Wallet from "./models/Wallet";
+import { buildSchema } from 'graphql';
+import { createUser, getUser, getUsers } from './users';
+import Wallet from './models/Wallet';
+import mongoose from 'mongoose';
 
 // Definir o schema GraphQL
 const schema = buildSchema(`
@@ -26,32 +25,34 @@ const schema = buildSchema(`
   }
 
   type Mutation {
-    createUser(name: String!, email: String!, wallet: Int!): User
+    createUser(name: String!, email: String!): User
     addFundsToWallet(userId: ID!, amount: Float!): Wallet
     sendFunds(fromUserId: ID!, toUserId: ID!, amount: Float!): Boolean
   }
 `);
 
 const root = {
-  user: ({ id }: { id: string }): Promise<User | null> => getUser(id),
-  users: (): Promise<User[]> => getUsers(),
-  createUser: ({name, email, wallet}: {name: string, email: string, wallet: number})  => createUser(name, email),
-  wallet: async ({userId}: {userId: string}) => {
+  user: ({ id }: { id: string }) => getUser(id),
+  users: () => getUsers(),
+  createUser: ({ name, email }: { name: string, email: string }) => createUser(name, email),
+  wallet: async ({ userId }: { userId: string }) => {
     try {
-      return await Wallet.findOne({userId: new mongoose.Types.ObjectId(userId)})
+      const wallet = await Wallet.findOne({ userId: new mongoose.Types.ObjectId(userId) });
+      console.log(wallet)
+      return wallet
     } catch (error) {
       console.error('Erro ao buscar a wallet:', error);
       throw new Error('Erro ao buscar a wallet');
     }
   },
-  addFundsToWallet: async ({ userId , amount}: {userId: string, amount: number}) => {
+  addFundsToWallet: async ({ userId, amount }: { userId: string, amount: number }) => {
     try {
       const wallet = await Wallet.findOneAndUpdate(
-        {userId : new mongoose.Types.ObjectId(userId)},
+        { userId: new mongoose.Types.ObjectId(userId) },
         { $inc: { balance: amount } },
         { new: true }
-      )
-      return wallet
+      );
+      return wallet;
     } catch (error) {
       console.error('Erro ao adicionar fundos à wallet:', error);
       throw new Error('Erro ao adicionar fundos à wallet');
@@ -84,22 +85,3 @@ const root = {
 };
 
 export { schema, root };
-
-/*
-// Definir os resolvers para as queries e mutações
-const root = {
-  user: ({ id }: { id: string }) => getUser(id),
-  users: () => getUsers(),
-  createUser: ({
-    name,
-    email,
-    wallet
-  }: {
-    name: string;
-    email: string;
-    wallet: number;
-  }) => createUser(name, email, wallet),
-};
-
-export { schema, root };
-*/
