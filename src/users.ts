@@ -7,9 +7,9 @@ const getUser = async (id: string): Promise<IUser | null> => {
       path: "wallet",
       populate: {
         path: "transactions",
-        model: "Transaction"
-      }
-    })
+        model: "Transaction",
+      },
+    });
     console.log(user);
 
     return user;
@@ -25,8 +25,8 @@ const getUsers = async (): Promise<IUser[]> => {
       path: "wallet",
       populate: {
         path: "transactions",
-        model: "Transaction"
-      }
+        model: "Transaction",
+      },
     });
     return users;
   } catch (error) {
@@ -44,6 +44,8 @@ const createUser = async (name: string, email: string): Promise<IUser> => {
     // Cria o usuário
     const user = new User({ name, email, wallet: wallet._id });
     await user.save();
+
+    await user.populate("wallet");
 
     return user;
   } catch (error) {
