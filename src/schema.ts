@@ -1,3 +1,4 @@
+// arquivo schema.ts
 import { buildSchema } from 'graphql';
 import { createUser, getUser, getUsers } from './users';
 import Wallet from './models/Wallet';
@@ -14,20 +15,19 @@ const schema = buildSchema(`
 
   type Wallet {
     id: ID!
-    userId: ID!
     balance: Float!
   }
 
   type Query {
     user(id: ID!): User
     users: [User]
-    wallet(userId: ID!): Wallet
+    wallet(id: ID!): Wallet
   }
 
   type Mutation {
     createUser(name: String!, email: String!): User
-    addFundsToWallet(userId: ID!, amount: Float!): Wallet
-    sendFunds(fromUserId: ID!, toUserId: ID!, amount: Float!): Boolean
+    addFundsToWallet(walletId: ID!, amount: Float!): Wallet
+    sendFunds(fromWalletId: ID!, toWalletId: ID!, amount: Float!): Boolean
   }
 `);
 
@@ -35,20 +35,20 @@ const root = {
   user: ({ id }: { id: string }) => getUser(id),
   users: () => getUsers(),
   createUser: ({ name, email }: { name: string, email: string }) => createUser(name, email),
-  wallet: async ({ userId }: { userId: string }) => {
+  wallet: async ({ id }: { id: string }) => {
     try {
-      const wallet = await Wallet.findOne({ userId: new mongoose.Types.ObjectId(userId) });
-      console.log(wallet)
-      return wallet
+      const wallet = await Wallet.findById(new mongoose.Types.ObjectId(id));
+      console.log(wallet);
+      return wallet;
     } catch (error) {
       console.error('Erro ao buscar a wallet:', error);
       throw new Error('Erro ao buscar a wallet');
     }
   },
-  addFundsToWallet: async ({ userId, amount }: { userId: string, amount: number }) => {
+  addFundsToWallet: async ({ walletId, amount }: { walletId: string, amount: number }) => {
     try {
-      const wallet = await Wallet.findOneAndUpdate(
-        { userId: new mongoose.Types.ObjectId(userId) },
+      const wallet = await Wallet.findByIdAndUpdate(
+        new mongoose.Types.ObjectId(walletId),
         { $inc: { balance: amount } },
         { new: true }
       );
@@ -58,16 +58,16 @@ const root = {
       throw new Error('Erro ao adicionar fundos à wallet');
     }
   },
-  sendFunds: async ({ fromUserId, toUserId, amount }: { fromUserId: string, toUserId: string, amount: number }) => {
+  sendFunds: async ({ fromWalletId, toWalletId, amount }: { fromWalletId: string, toWalletId: string, amount: number }) => {
     try {
-      const fromWallet = await Wallet.findOneAndUpdate(
-        { userId: new mongoose.Types.ObjectId(fromUserId) },
+      const fromWallet = await Wallet.findByIdAndUpdate(
+        new mongoose.Types.ObjectId(fromWalletId),
         { $inc: { balance: -amount } },
         { new: true }
       );
 
-      const toWallet = await Wallet.findOneAndUpdate(
-        { userId: new mongoose.Types.ObjectId(toUserId) },
+      const toWallet = await Wallet.findByIdAndUpdate(
+        new mongoose.Types.ObjectId(toWalletId),
         { $inc: { balance: amount } },
         { new: true }
       );
@@ -75,7 +75,7 @@ const root = {
       if (fromWallet && toWallet) {
         return true; // Retorna true se a operação for bem-sucedida
       } else {
-        throw new Error('Usuário ou wallet não encontrada');
+        throw new Error('Wallet não encontrada');
       }
     } catch (error) {
       console.error('Erro ao enviar fundos:', error);

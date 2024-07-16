@@ -1,4 +1,3 @@
-import mongoose from "mongoose";
 import User, { IUser } from "./models/User";
 import Wallet from "./models/Wallet";
 
@@ -27,18 +26,16 @@ const getUsers = async (): Promise<IUser[]> => {
 const createUser = async (name: string, email: string): Promise<IUser> => {
   try {
     // Cria a wallet
-    const wallet = new Wallet({
-      userId: new mongoose.Types.ObjectId(),
-      balance: 0,
-    });
+    const wallet = new Wallet({ balance: 0 });
     await wallet.save();
-    console.log(wallet);
 
     // Cria o usuário
     const user = new User({ name, email, wallet: wallet._id });
     await user.save();
 
     console.log(user);
+    console.log(wallet);
+    console.log('-------------------------------');
 
     return user;
   } catch (error) {
