@@ -5,6 +5,16 @@ interface ITransaction extends Document {
   toWallet: mongoose.Types.ObjectId;
   amount: number;
   date: Date;
+  sender: {
+    id: mongoose.Types.ObjectId;
+    name: string;
+    email: string;
+  };
+  receiver: {
+    id: mongoose.Types.ObjectId;
+    name: string;
+    email: string;
+  };
 }
 
 const TransactionSchema: Schema = new Schema({
@@ -12,6 +22,16 @@ const TransactionSchema: Schema = new Schema({
   toWallet: { type: mongoose.Types.ObjectId, ref: "Wallet", require: true },
   amount: { type: Number, require: true },
   date: { type: Date, default: Date.now },
+  sender: {
+    id: { type: mongoose.Types.ObjectId, ref: "User", required: true },
+    name: { type: String, required: true },
+    email: { type: String, required: true },
+  },
+  receiver: {
+    id: { type: mongoose.Types.ObjectId, ref: "User", required: true },
+    name: { type: String, required: true },
+    email: { type: String, required: true },
+  },
 });
 
 const Transaction = mongoose.model<ITransaction>(

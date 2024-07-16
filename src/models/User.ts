@@ -1,9 +1,10 @@
 import mongoose, { Document, Schema } from 'mongoose';
+import { IWallet } from './Wallet';
 
 interface IUser extends Document {
   name: string;
   email: string;
-  wallet: mongoose.Types.ObjectId; // referência para a wallet
+  wallet: mongoose.Types.ObjectId | IWallet; // referência para a wallet
 }
 
 const UserSchema: Schema = new Schema({

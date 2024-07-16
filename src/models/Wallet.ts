@@ -1,8 +1,9 @@
 import mongoose, { Document, Schema } from "mongoose";
+import { ITransaction } from "./Transaction";
 
 interface IWallet extends Document {
   balance: number;
-  transactions: mongoose.Types.ObjectId[];
+  transactions: mongoose.Types.ObjectId[]  | ITransaction[];
 }
 
 const WalletSchema: Schema = new Schema({
