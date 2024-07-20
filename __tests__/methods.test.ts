@@ -7,7 +7,7 @@ import { schema, root } from "../src/schema";
 import connectDB from "../src/db";
 import mongoose from "mongoose";
 
-interface GraphQLRequestBody {
+interface RequestBody {
   query: string;
   variables?: { [key: string]: any };
 }
@@ -15,12 +15,10 @@ interface GraphQLRequestBody {
 const app = new Koa();
 const router = new Router();
 
-// Middleware de body parser
 app.use(bodyParser());
 
-// Rota GraphQL
-router.post("/graphql", async (ctx) => {
-  const body = ctx.request.body as GraphQLRequestBody; // Cast para o tipo correto
+router.post("/api", async (ctx) => {
+  const body = ctx.request.body as RequestBody; // Cast para o tipo correto
   const { query, variables } = body;
   const result = await graphql({
     schema,
@@ -31,7 +29,6 @@ router.post("/graphql", async (ctx) => {
   ctx.body = result;
 });
 
-// Usar o roteador
 app.use(router.routes()).use(router.allowedMethods());
 
 beforeAll(async () => {
@@ -55,7 +52,7 @@ describe("GraphQL API", () => {
     `;
 
     const response = await request(app.callback())
-      .post("/graphql")
+      .post("/api")
       .send({ query: mutation });
 
     expect(response.status).toBe(200);
@@ -77,7 +74,7 @@ describe("GraphQL API", () => {
       }
     `;
     const createUserResponse = await request(app.callback())
-      .post("/graphql")
+      .post("/api")
       .send({ query: createUserMutation });
     const walletId = createUserResponse.body.data.createUser.wallet.id;
 
@@ -91,7 +88,7 @@ describe("GraphQL API", () => {
     `;
 
     const response = await request(app.callback())
-      .post("/graphql")
+      .post("/api")
       .send({ query: addFundsMutation });
 
     expect(response.status).toBe(200);
@@ -102,7 +99,7 @@ describe("GraphQL API", () => {
   test("should send funds between wallets", async () => {
     // Criar dois usuários para enviar fundos entre eles
     const createUser1 = await request(app.callback())
-      .post("/graphql")
+      .post("/api")
       .send({
         query: `
         mutation {
@@ -116,7 +113,7 @@ describe("GraphQL API", () => {
       `,
       });
     const createUser2 = await request(app.callback())
-      .post("/graphql")
+      .post("/api")
       .send({
         query: `
         mutation {
@@ -135,7 +132,7 @@ describe("GraphQL API", () => {
 
     // Adicionar fundos ao primeiro usuário para realizar a transferência
     await request(app.callback())
-      .post("/graphql")
+      .post("/api")
       .send({
         query: `
         mutation {
@@ -157,7 +154,7 @@ describe("GraphQL API", () => {
     `;
 
     const response = await request(app.callback())
-      .post("/graphql")
+      .post("/api")
       .send({ query: sendFundsMutation });
 
     expect(response.status).toBe(200);

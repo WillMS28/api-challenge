@@ -10,7 +10,6 @@ const getUser = async (id: string): Promise<IUser | null> => {
         model: "Transaction",
       },
     });
-    console.log(user);
 
     return user;
   } catch (error) {

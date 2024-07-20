@@ -4,6 +4,7 @@ import Router from 'koa-router';
 import { graphql } from 'graphql';
 import { schema, root } from './schema';
 import connectDB from './db';
+import cors from 'koa2-cors'; 
 
 interface GraphQLRequestBody {
   query: string;
@@ -13,15 +14,17 @@ interface GraphQLRequestBody {
 const app = new Koa();
 const router = new Router();
 
-// Conectar ao MongoDB
 connectDB();
 
-// Middleware de body parser
+app.use(cors({
+  origin: 'http://localhost:5173', 
+  credentials: true, 
+}));
+
 app.use(bodyParser());
 
-// Rota GraphQL
-router.post('/graphql', async (ctx) => {
-  const body = ctx.request.body as GraphQLRequestBody; // Cast para o tipo correto
+router.post('/api', async (ctx) => {
+  const body = ctx.request.body as GraphQLRequestBody; 
   const { query, variables } = body;
   const result = await graphql({
     schema: schema,
@@ -32,12 +35,10 @@ router.post('/graphql', async (ctx) => {
   ctx.body = result;
 });
 
-// Usar o roteador
 app
   .use(router.routes())
   .use(router.allowedMethods());
 
-// Iniciar o servidor
 const port = 3000;
 app.listen(port, () => {
   console.log(`Servidor rodando na porta ${port}`);

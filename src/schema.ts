@@ -7,7 +7,6 @@ import Wallet from "./models/Wallet";
 import Transaction from "./models/Transaction";
 import User from "./models/User";
 
-// Definir o schema GraphQL
 const schema = buildSchema(`
   type User {
     id: ID!
@@ -59,8 +58,6 @@ const root = {
       if (!wallet) {
         throw new Error("Wallet not found");
       }
-      console.log("____________wallet______________");
-      console.log(wallet);
 
       return wallet;
     } catch (error) {
@@ -97,11 +94,15 @@ const root = {
     amount: number;
   }) => {
     try {
-      const fromWallet = await Wallet.findById(
-        new mongoose.Types.ObjectId(fromWalletId)
+      const fromWallet = await Wallet.findByIdAndUpdate(
+        new mongoose.Types.ObjectId(fromWalletId),
+        { $inc: { balance: -amount } },
+        { new: true }
       );
-      const toWallet = await Wallet.findById(
-        new mongoose.Types.ObjectId(toWalletId)
+      const toWallet = await Wallet.findByIdAndUpdate(
+        new mongoose.Types.ObjectId(toWalletId),
+        { $inc: { balance: amount } },
+        { new: true }
       );
 
       if (!fromWallet || !toWallet) {
@@ -128,15 +129,14 @@ const root = {
         sender: {
           id: sender._id,
           name: sender.name,
-          email: receiver.email
+          email: receiver.email,
         },
         receiver: {
           id: receiver._id,
           name: receiver.name,
-          email: receiver.email
+          email: receiver.email,
         },
       });
-      console.log(transaction);
       await transaction.save();
 
       // Atualizar o array de transactions com o ID da nova transação
