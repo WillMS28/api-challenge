@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import Wallet from "./models/Wallet";
 import User from "./models/User";
+import BigNumber from "bignumber.js";
 import Transaction from "./models/Transaction";
 
 export const getWallet = async (id: string) => {
@@ -13,7 +14,10 @@ export const getWallet = async (id: string) => {
       throw new Error("Wallet not found");
     }
 
-    return wallet;
+    return {
+      ...wallet.toObject(),
+      balance: new BigNumber(wallet.balance).toString(), // Converter para string
+    };
   } catch (error) {
     console.error("Erro ao buscar a wallet:", error);
     throw new Error("Erro ao buscar a wallet");
@@ -21,24 +25,34 @@ export const getWallet = async (id: string) => {
 };
 
 export const addFunds = async ({
-  walletId,
-  amount,
-}: {
-  walletId: string;
-  amount: number;
-}) => {
-  try {
-    const wallet = await Wallet.findByIdAndUpdate(
-      new mongoose.Types.ObjectId(walletId),
-      { $inc: { balance: amount } },
-      { new: true }
-    );
-    return wallet;
-  } catch (error) {
-    console.error("Erro ao adicionar fundos à wallet:", error);
-    throw new Error("Erro ao adicionar fundos à wallet");
-  }
-};
+    walletId,
+    amount,
+  }: {
+    walletId: string;
+    amount: string;
+  }) => {
+    try {
+      const wallet = await Wallet.findById(walletId);
+  
+      if (!wallet) {
+        throw new Error("Wallet not found");
+      }
+  
+      const newBalance = new BigNumber(wallet.balance).plus(amount);
+      wallet.balance = newBalance
+  
+      await wallet.save();
+  
+      return {
+        id: wallet._id,
+        balance: newBalance.toString(),
+        transactions: wallet.transactions,
+      };
+    } catch (error) {
+      console.error("Erro ao adicionar fundos à wallet:", error);
+      throw new Error("Erro ao adicionar fundos à wallet");
+    }
+  };
 
 export const transactionFunds = async ({
   fromWalletId,
@@ -47,25 +61,25 @@ export const transactionFunds = async ({
 }: {
   fromWalletId: string;
   toWalletId: string;
-  amount: number;
+  amount: string;
 }) => {
   try {
-    const fromWallet = await Wallet.findByIdAndUpdate(
-      new mongoose.Types.ObjectId(fromWalletId),
-      { $inc: { balance: -amount } },
-      { new: true }
-    );
-    const toWallet = await Wallet.findByIdAndUpdate(
-      new mongoose.Types.ObjectId(toWalletId),
-      { $inc: { balance: amount } },
-      { new: true }
-    );
+    const fromWallet = await Wallet.findById(fromWalletId);
+    const toWallet = await Wallet.findById(toWalletId);
 
     if (!fromWallet || !toWallet) {
       throw new Error("Wallet not found");
     }
 
-    // Buscar informações do remetente e destinatário
+    const fromWalletBalance = new BigNumber(fromWallet.balance).minus(amount);
+    const toWalletBalance = new BigNumber(toWallet.balance).plus(amount);
+
+    fromWallet.balance = fromWalletBalance;
+    toWallet.balance = toWalletBalance;
+
+    await fromWallet.save();
+    await toWallet.save();
+
     const sender = await User.findOne({ wallet: fromWallet._id }).select(
       "_id name email"
     );
@@ -76,16 +90,16 @@ export const transactionFunds = async ({
     if (!sender || !receiver) {
       throw new Error("Sender or receiver not found");
     }
-    // Criar nova transação
+
     const transaction = new Transaction({
       fromWallet: fromWallet._id,
       toWallet: toWallet._id,
-      amount,
+      amount: new BigNumber(amount).toString(), // Armazenado como string
       date: new Date(),
       sender: {
         id: sender._id,
         name: sender.name,
-        email: receiver.email,
+        email: sender.email,
       },
       receiver: {
         id: receiver._id,
@@ -95,18 +109,16 @@ export const transactionFunds = async ({
     });
     await transaction.save();
 
-    // Atualizar o array de transactions com o ID da nova transação
     await Wallet.updateOne(
-      { _id: new mongoose.Types.ObjectId(fromWalletId) },
+      { _id: fromWallet._id },
+      { $push: { transactions: transaction._id } }
+    );
+    await Wallet.updateOne(
+      { _id: toWallet._id },
       { $push: { transactions: transaction._id } }
     );
 
-    await Wallet.updateOne(
-      { _id: new mongoose.Types.ObjectId(toWalletId) },
-      { $push: { transactions: transaction._id } }
-    );
-
-    return transaction; // Retorna true se a operação for bem-sucedida
+    return transaction;
   } catch (error) {
     console.error("Erro ao enviar fundos:", error);
     throw new Error("Erro ao enviar fundos");

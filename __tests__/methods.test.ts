@@ -80,7 +80,7 @@ describe("GraphQL API", () => {
 
     const addFundsMutation = `
       mutation {
-        addFundsToWallet(walletId: "${walletId}", amount: 100.0) {
+        addFundsToWallet(walletId: "${walletId}", amount: "100.0") {
           id
           balance
         }
@@ -89,11 +89,11 @@ describe("GraphQL API", () => {
 
     const response = await request(app.callback())
       .post("/api")
-      .send({ query: addFundsMutation });
+      .send({ query: addFundsMutation })
 
     expect(response.status).toBe(200);
     expect(response.body.data.addFundsToWallet).toHaveProperty("id");
-    expect(response.body.data.addFundsToWallet.balance).toBe(100.0);
+    expect(response.body.data.addFundsToWallet.balance).toBe("100");
   });
 
   test("should send funds between wallets", async () => {
@@ -136,7 +136,7 @@ describe("GraphQL API", () => {
       .send({
         query: `
         mutation {
-          addFundsToWallet(walletId: "${fromWalletId}", amount: 100.0) {
+          addFundsToWallet(walletId: "${fromWalletId}", amount: "100.0") {
             id
             balance
           }
@@ -146,7 +146,7 @@ describe("GraphQL API", () => {
 
     const sendFundsMutation = `
       mutation {
-        sendFunds(fromWalletId: "${fromWalletId}", toWalletId: "${toWalletId}", amount: 50.0) {
+        sendFunds(fromWalletId: "${fromWalletId}", toWalletId: "${toWalletId}", amount: "50.0") {
           id
           amount
         }
@@ -159,6 +159,6 @@ describe("GraphQL API", () => {
 
     expect(response.status).toBe(200);
     expect(response.body.data.sendFunds).toHaveProperty("id");
-    expect(response.body.data.sendFunds.amount).toBe(50.0);
+    expect(response.body.data.sendFunds.amount).toBe("50");
   });
 });

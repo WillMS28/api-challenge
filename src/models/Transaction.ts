@@ -1,9 +1,10 @@
 import mongoose, { Document, Schema } from "mongoose";
+import BigNumber from "bignumber.js";
 
 interface ITransaction extends Document {
   fromWallet: mongoose.Types.ObjectId;
   toWallet: mongoose.Types.ObjectId;
-  amount: number;
+  amount: BigNumber;
   date: Date;
   sender: {
     id: mongoose.Types.ObjectId;
@@ -20,7 +21,7 @@ interface ITransaction extends Document {
 const TransactionSchema: Schema = new Schema({
   fromWallet: { type: mongoose.Types.ObjectId, ref: "Wallet", require: true },
   toWallet: { type: mongoose.Types.ObjectId, ref: "Wallet", require: true },
-  amount: { type: Number, require: true },
+  amount: { type: String, require: true },
   date: { type: Date, default: Date.now },
   sender: {
     id: { type: mongoose.Types.ObjectId, ref: "User", required: true },

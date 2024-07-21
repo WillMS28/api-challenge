@@ -12,7 +12,7 @@ const schema = buildSchema(`
 
   type Wallet {
     id: ID!
-    balance: Float!
+    balance: String!
     transactions: [Transaction]
   }
 
@@ -20,7 +20,7 @@ const schema = buildSchema(`
     id: ID!
     fromWallet: ID!
     toWallet: ID!
-    amount: Float!
+    amount: String!
     date: String!
     sender: User!
     receiver: User!
@@ -34,8 +34,8 @@ const schema = buildSchema(`
 
   type Mutation {
     createUser(name: String!, email: String!): User
-    addFundsToWallet(walletId: ID!, amount: Float!): Wallet
-    sendFunds(fromWalletId: ID!, toWalletId: ID!, amount: Float!): Transaction
+    addFundsToWallet(walletId: ID!, amount: String!): Wallet
+    sendFunds(fromWalletId: ID!, toWalletId: ID!, amount: String!): Transaction
   }
 `);
 
@@ -49,7 +49,7 @@ const root = {
     amount,
     walletId,
   }: {
-    amount: number;
+    amount: string;
     walletId: string;
   }) => addFunds({ amount, walletId }),
   sendFunds: ({
@@ -59,7 +59,7 @@ const root = {
   }: {
     fromWalletId: string;
     toWalletId: string;
-    amount: number;
+    amount: string;
   }) =>
     transactionFunds({
       fromWalletId,
