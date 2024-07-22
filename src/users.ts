@@ -16,7 +16,6 @@ const getUser = async (id: string): Promise<IUser | null> => {
       const wallet = user.wallet as any;
       wallet.balance = new BigNumber(wallet.balance).toString();
     }
-
     return user;
   } catch (error) {
     console.error("Erro ao buscar usuário:", error);
@@ -34,7 +33,7 @@ const getUsers = async (): Promise<IUser[]> => {
       },
     });
 
-    users.forEach(user => {
+    users.forEach((user) => {
       if (user.wallet) {
         const wallet = user.wallet as any;
         wallet.balance = new BigNumber(wallet.balance).toString();
@@ -50,7 +49,7 @@ const getUsers = async (): Promise<IUser[]> => {
 
 const createUser = async (name: string, email: string): Promise<IUser> => {
   try {
-    const wallet = new Wallet({ balance: "0" }); 
+    const wallet = new Wallet({ balance: "0" });
     await wallet.save();
 
     const user = new User({ name, email, wallet: wallet._id });

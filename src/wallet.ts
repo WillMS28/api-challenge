@@ -15,8 +15,9 @@ export const getWallet = async (id: string) => {
     }
 
     return {
-      ...wallet.toObject(),
+      id: wallet._id.toString(), // Assegura que o campo `id` é uma string
       balance: new BigNumber(wallet.balance).toString(), // Converter para string
+      transactions: wallet.transactions,
     };
   } catch (error) {
     console.error("Erro ao buscar a wallet:", error);
@@ -25,34 +26,43 @@ export const getWallet = async (id: string) => {
 };
 
 export const addFunds = async ({
-    walletId,
-    amount,
-  }: {
-    walletId: string;
-    amount: string;
-  }) => {
-    try {
-      const wallet = await Wallet.findById(walletId);
-  
-      if (!wallet) {
-        throw new Error("Wallet not found");
-      }
-  
-      const newBalance = new BigNumber(wallet.balance).plus(amount);
-      wallet.balance = newBalance
-  
-      await wallet.save();
-  
-      return {
-        id: wallet._id,
-        balance: newBalance.toString(),
-        transactions: wallet.transactions,
-      };
-    } catch (error) {
-      console.error("Erro ao adicionar fundos à wallet:", error);
-      throw new Error("Erro ao adicionar fundos à wallet");
+  walletId,
+  amount,
+}: {
+  walletId: string;
+  amount: string;
+}) => {
+  const session = await mongoose.startSession();
+
+  // session.startTransaction();
+  try {
+    const wallet = await Wallet.findById(walletId).session(session);
+
+    if (!wallet) {
+      throw new Error("Wallet not found");
     }
-  };
+
+    const newBalance = new BigNumber(wallet.balance).plus(amount);
+    wallet.balance = newBalance;
+
+    await wallet.save({ session });
+
+    //   await session.commitTransaction();
+    session.endSession();
+
+    return {
+      id: wallet._id,
+      balance: newBalance.toString(),
+      transactions: wallet.transactions,
+    };
+  } catch (error) {
+    //   await session.abortTransaction();
+    session.endSession();
+
+    console.error("Erro ao adicionar fundos à wallet:", error);
+    throw new Error("Erro ao adicionar fundos à wallet");
+  }
+};
 
 export const transactionFunds = async ({
   fromWalletId,
@@ -63,9 +73,10 @@ export const transactionFunds = async ({
   toWalletId: string;
   amount: string;
 }) => {
+  const session = await mongoose.startSession();
   try {
-    const fromWallet = await Wallet.findById(fromWalletId);
-    const toWallet = await Wallet.findById(toWalletId);
+    const fromWallet = await Wallet.findById(fromWalletId).session(session);
+    const toWallet = await Wallet.findById(toWalletId).session(session);
 
     if (!fromWallet || !toWallet) {
       throw new Error("Wallet not found");
@@ -77,15 +88,15 @@ export const transactionFunds = async ({
     fromWallet.balance = fromWalletBalance;
     toWallet.balance = toWalletBalance;
 
-    await fromWallet.save();
-    await toWallet.save();
+    await fromWallet.save({ session });
+    await toWallet.save({ session });
 
-    const sender = await User.findOne({ wallet: fromWallet._id }).select(
-      "_id name email"
-    );
-    const receiver = await User.findOne({ wallet: toWallet._id }).select(
-      "_id name email"
-    );
+    const sender = await User.findOne({ wallet: fromWallet._id })
+      .select("_id name email")
+      .session(session);
+    const receiver = await User.findOne({ wallet: toWallet._id })
+      .select("_id name email")
+      .session(session);
 
     if (!sender || !receiver) {
       throw new Error("Sender or receiver not found");
@@ -107,20 +118,24 @@ export const transactionFunds = async ({
         email: receiver.email,
       },
     });
-    await transaction.save();
+    await transaction.save({ session });
 
     await Wallet.updateOne(
       { _id: fromWallet._id },
-      { $push: { transactions: transaction._id } }
+      { $push: { transactions: transaction._id } },
+      { session }
     );
     await Wallet.updateOne(
       { _id: toWallet._id },
-      { $push: { transactions: transaction._id } }
+      { $push: { transactions: transaction._id } },
+      { session }
     );
 
     return transaction;
   } catch (error) {
     console.error("Erro ao enviar fundos:", error);
     throw new Error("Erro ao enviar fundos");
+  } finally {
+    session.endSession();
   }
 };

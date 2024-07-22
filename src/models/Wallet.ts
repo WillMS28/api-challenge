@@ -3,6 +3,7 @@ import { ITransaction } from "./Transaction";
 import BigNumber from "bignumber.js";
 
 interface IWallet extends Document {
+  _id: mongoose.Types.ObjectId; 
   balance: BigNumber;
   transactions: mongoose.Types.ObjectId[]  | ITransaction[];
 }
