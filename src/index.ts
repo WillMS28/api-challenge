@@ -23,7 +23,7 @@ app.use(cors({
 
 app.use(bodyParser());
 
-router.post('/api', async (ctx) => {
+router.post('/graphql', async (ctx) => {
   const body = ctx.request.body as GraphQLRequestBody; 
   const { query, variables } = body;
   const result = await graphql({
